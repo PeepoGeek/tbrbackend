@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"net/http"
-	"strings"
+	"strconv"
 	"tbrBackend/db"
 	"tbrBackend/helpers"
 	"tbrBackend/models"
+	"tbrBackend/services"
 )
 
 func GetSoundHandler(w http.ResponseWriter, r *http.Request) {
@@ -32,35 +33,41 @@ func GetSoundsHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-// CreateSoundHandler handles the creation of a new sound.
-// CreateSoundHandler handles the creation of a new sound.
 func CreateSoundHandler(w http.ResponseWriter, r *http.Request) {
-	var sound models.Sound
-	err := json.NewDecoder(r.Body).Decode(&sound)
+	err := r.ParseMultipartForm(10 << 20) // 10 MB
 	if err != nil {
-		fmt.Println("Failed to decode request body:", err)
+		fmt.Println("Failed to parse multipart form:", err)
 		http.Error(w, "Invalid request payload", http.StatusBadRequest)
 		return
 	}
 
+	name := r.FormValue("name")
+	soundType := r.FormValue("type")
+	tier := r.FormValue("tier")
+	durationStr := r.FormValue("duration")
+	description := r.FormValue("description")
+	file, handler, err := r.FormFile("file")
+	if err != nil {
+		fmt.Println("Failed to retrieve file:", err)
+		http.Error(w, "File is required", http.StatusBadRequest)
+		return
+	}
+	defer file.Close()
+
 	// Validate the input data
 	missingFields := []string{}
-	if sound.Name == "" {
+	if name == "" {
 		missingFields = append(missingFields, "name")
 	}
-	if sound.Type == "" {
+	if soundType == "" {
 		missingFields = append(missingFields, "type")
 	}
-	if sound.Tier == "" {
+	if tier == "" {
 		missingFields = append(missingFields, "tier")
 	}
-	if sound.Duration <= 0 {
+	if durationStr == "" {
 		missingFields = append(missingFields, "duration")
 	}
-	if sound.URL == "" {
-		missingFields = append(missingFields, "url")
-	}
-
 	if len(missingFields) > 0 {
 		message := "Missing required fields: " + helpers.StringJoin(missingFields, ", ")
 		fmt.Println(message)
@@ -68,19 +75,47 @@ func CreateSoundHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sound.UUID = uuid.New().String()
+	duration, err := strconv.Atoi(durationStr)
+	if err != nil || duration <= 0 {
+		fmt.Println("Invalid duration:", err)
+		http.Error(w, "Invalid duration", http.StatusBadRequest)
+		return
+	}
+
+	sound := models.Sound{
+		UUID:        uuid.New().String(),
+		Name:        name,
+		Type:        soundType,
+		Tier:        tier,
+		Duration:    duration,
+		Description: description,
+	}
+
+	// Check for unique constraint violation
+	var existingSound models.Sound
+	result := db.DB.Where("name = ?", sound.Name).First(&existingSound)
+	if result.Error == nil {
+		fmt.Println("Failed to create sound: name already exists")
+		http.Error(w, "Name already exists", http.StatusConflict)
+		return
+	}
+
+	// Upload the audio to S3
+	s3Client := services.NewS3Client()
+	url, err := s3Client.UploadFile("tbrsoundbucket", sound.Type, handler.Filename, file)
+	if err != nil {
+		fmt.Println("Failed to upload audio to S3:", err)
+		http.Error(w, "Failed to upload audio to S3", http.StatusInternalServerError)
+		return
+	}
+
+	// Set the URL returned by S3
+	sound.URL = url
 
 	// Create the sound in the database
 	fmt.Println("Creating sound:", sound)
-	result := db.DB.Create(&sound)
-
-	// Check for unique constraint violation
+	result = db.DB.Create(&sound)
 	if result.Error != nil {
-		if strings.Contains(result.Error.Error(), "duplicate key value violates unique constraint") {
-			fmt.Println("Failed to create sound: name already exists")
-			http.Error(w, "Name already exists", http.StatusConflict)
-			return
-		}
 		fmt.Println("Failed to create sound:", result.Error)
 		http.Error(w, "Failed to create sound", http.StatusInternalServerError)
 		return
