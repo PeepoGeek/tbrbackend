@@ -8,10 +8,14 @@ import (
 	"tbrBackend/db"
 	"tbrBackend/models"
 	"tbrBackend/routes"
+	"tbrBackend/services"
 )
 
 func main() {
 	db.ConnectDB()
+	s3Client := services.NewS3Client()
+	s3Client.ListBuckets()
+
 	erro := db.DB.AutoMigrate(models.Sound{})
 	if erro != nil {
 		log.Fatal(erro)
