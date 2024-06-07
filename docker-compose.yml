@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    ports:
+      - "8080:8080" # Cambia 9000 a 8080 si es necesario
+    depends_on:
+      - db
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=joseSuperior
+      - DB_PASSWORD=admin123
+      - DB_NAME=tbrdb
+      - AWS_REGION={AWS_REGION}
+      - AWS_ACCESS_KEY_ID={AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY={AWS_SECRET_ACCESS_KEY}
+      - AWS_BUCKET_NAME={AWS_BUCKET_NAME}
+
+  db:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: joseSuperior
+      POSTGRES_PASSWORD: admin123
+      POSTGRES_DB: tbrdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+volumes:
+  db_data:
