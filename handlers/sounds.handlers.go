@@ -7,6 +7,7 @@ import (
 	"github.com/gorilla/mux"
 	"mime/multipart"
 	"net/http"
+	"os"
 	"strconv"
 	"tbrBackend/db"
 	"tbrBackend/helpers"
@@ -47,6 +48,7 @@ func GetSoundsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func CreateSoundHandler(w http.ResponseWriter, r *http.Request) {
+	bucketName := os.Getenv("AWS_BUCKET_NAME")
 	err := r.ParseMultipartForm(10 << 20) // 10 MB
 	if err != nil {
 		fmt.Println("Failed to parse multipart form:", err)
@@ -120,7 +122,7 @@ func CreateSoundHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Upload the audio to S3
 	s3Client := services.NewS3Client()
-	url, err := s3Client.UploadFile("tbrsoundbucket", sound.Type, handler.Filename, file)
+	url, err := s3Client.UploadFile(bucketName, sound.Type, handler.Filename, file)
 	if err != nil {
 		fmt.Println("Failed to upload audio to S3:", err)
 		http.Error(w, "Failed to upload audio to S3", http.StatusInternalServerError)
@@ -151,6 +153,7 @@ func CreateSoundHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func UpdateSoundHandler(w http.ResponseWriter, r *http.Request) {
+	bucketName := os.Getenv("AWS_BUCKET_NAME")
 	err := r.ParseMultipartForm(10 << 20) // 10 MB
 	if err != nil {
 		fmt.Println("Failed to parse multipart form:", err)
@@ -209,7 +212,7 @@ func UpdateSoundHandler(w http.ResponseWriter, r *http.Request) {
 		}(file)
 		// Upload the updated audio to S3
 		s3Client := services.NewS3Client()
-		url, err := s3Client.UploadFile("tbrsoundbucket", sound.Type, handler.Filename, file)
+		url, err := s3Client.UploadFile(bucketName, sound.Type, handler.Filename, file)
 		if err != nil {
 			fmt.Println("Failed to upload audio to S3:", err)
 			http.Error(w, "Failed to upload audio to S3", http.StatusInternalServerError)
