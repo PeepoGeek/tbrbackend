@@ -13,10 +13,10 @@ services:
       - DB_USER=joseSuperior
       - DB_PASSWORD=admin123
       - DB_NAME=tbrdb
-      - AWS_REGION={AWS_REGION}
-      - AWS_ACCESS_KEY_ID={AWS_ACCESS_KEY_ID}
-      - AWS_SECRET_ACCESS_KEY={AWS_SECRET_ACCESS_KEY}
-      - AWS_BUCKET_NAME={AWS_BUCKET_NAME}
+      - AWS_REGION=${AWS_REGION}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_BUCKET_NAME=${AWS_BUCKET_NAME}
 
   db:
     image: postgres:13
