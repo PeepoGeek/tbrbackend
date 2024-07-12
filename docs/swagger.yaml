@@ -1,0 +1,284 @@
+definitions:
+  gorm.DeletedAt:
+    properties:
+      time:
+        type: string
+      valid:
+        description: Valid is true if Time is not NULL
+        type: boolean
+    type: object
+  handlers.SoundResponse:
+    properties:
+      description:
+        type: string
+      duration:
+        type: integer
+      name:
+        type: string
+      tier:
+        description: '''free'' or ''premium'''
+        type: string
+      type:
+        description: '''background'' or ''session'''
+        type: string
+      url:
+        type: string
+      uuid:
+        type: string
+    type: object
+  models.Sound:
+    properties:
+      createdAt:
+        type: string
+      deletedAt:
+        $ref: '#/definitions/gorm.DeletedAt'
+      description:
+        type: string
+      duration:
+        description: duration in seconds
+        type: integer
+      id:
+        type: integer
+      name:
+        type: string
+      tier:
+        description: '''free'' or ''premium'''
+        type: string
+      type:
+        description: '''background'' or ''session'''
+        type: string
+      updatedAt:
+        type: string
+      url:
+        type: string
+      uuid:
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /api/v1/health:
+    get:
+      consumes:
+      - application/json
+      description: Returns the API status
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: API is up and running
+          schema:
+            type: string
+      summary: Check the health of the API
+      tags:
+      - health
+  /api/v1/sound:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves all sounds from the database
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of all sounds
+          schema:
+            items:
+              $ref: '#/definitions/handlers.SoundResponse'
+            type: array
+      summary: Get all sounds
+      tags:
+      - sounds
+    post:
+      consumes:
+      - multipart/form-data
+      description: Adds a new sound to the database with detailed properties and an
+        audio file.
+      parameters:
+      - description: Name of the sound
+        in: formData
+        name: name
+        required: true
+        type: string
+      - description: Type of the sound; valid values are 'background' or 'session'.
+        in: formData
+        name: type
+        required: true
+        type: string
+      - description: Tier of the sound; valid values are 'free' or 'premium'.
+        in: formData
+        name: tier
+        required: true
+        type: string
+      - description: Duration of the sound in seconds; must be a positive integer.
+        in: formData
+        name: duration
+        required: true
+        type: integer
+      - description: Description of the sound; optional but useful for additional
+          context.
+        in: formData
+        name: description
+        type: string
+      - description: Audio file for the sound; required and must be in an acceptable
+          audio format.
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Sound created successfully with details in the response body.
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid input data with detailed error message.
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Name conflict; the specified sound name already exists.
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error; something went wrong on the server.
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create a sound
+      tags:
+      - sounds
+  /api/v1/sound/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes a sound by UUID and removes the associated file from S3
+      parameters:
+      - description: UUID of the sound to delete
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Sound deleted successfully
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Sound not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Failed to delete sound or associated file
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Delete a sound
+      tags:
+      - sounds
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a sound by its UUID
+      parameters:
+      - description: UUID of the sound to retrieve
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Details of the sound
+          schema:
+            $ref: '#/definitions/models.Sound'
+        "404":
+          description: Sound not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get a single sound
+      tags:
+      - sounds
+    put:
+      consumes:
+      - multipart/form-data
+      description: Updates the properties of an existing sound identified by its UUID,
+        except the sound file.
+      parameters:
+      - description: UUID of the sound to update
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: New name of the sound
+        in: formData
+        name: name
+        type: string
+      - description: New type of the sound; valid values are 'background' or 'session'.
+        in: formData
+        name: type
+        type: string
+      - description: New tier of the sound; valid values are 'free' or 'premium'.
+        in: formData
+        name: tier
+        type: string
+      - description: New duration of the sound in seconds; must be a positive integer
+          if provided.
+        in: formData
+        name: duration
+        type: integer
+      - description: New description of the sound; optional and can provide additional
+          context.
+        in: formData
+        name: description
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Sound updated successfully with message indicating successful
+            update.
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid input data with detailed error message.
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Sound not found if no sound matches the provided UUID.
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error if something goes wrong on the server
+            side.
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update a sound
+      tags:
+      - sounds
+swagger: "2.0"

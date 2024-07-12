@@ -7,10 +7,10 @@ services:
       - "8080:8080" # Cambia 9000 a 8080 si es necesario
 
     environment:
-      - DB_HOST=ls-e7a7bd71e305d165b4a63a9554551499cc8a816a.c76cmaci05e0.us-west-2.rds.amazonaws.com
+      - DB_HOST=ls-7404b88f97d836aefea18f39df04e8d30c3b1ddb.c2qz5tqa43cm.us-west-2.rds.amazonaws.com
       - DB_PORT=5432
       - DB_USER=dbmasteruser
-      - DB_PASSWORD=#>uG=1XfhM6|{ctz`WCFeN.wl+fVE>3F
+      - DB_PASSWORD=4L2;nVRf1.:A!-%EQZQ1C}(5aptQxy|u
       - DB_NAME=postgres
       - AWS_REGION=${AWS_REGION}
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}

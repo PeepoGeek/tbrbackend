@@ -1,19 +1,9 @@
 package routes
 
 import (
-	"fmt"
 	"github.com/gorilla/mux"
-	"net/http"
+	"tbrBackend/handlers"
 )
-
-func HealthCheck(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	_, err := w.Write([]byte("API is up and running haha"))
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-}
 
 func RegisterRoutes(router *mux.Router) {
 	RegisterSoundRoutes(router)
@@ -21,5 +11,5 @@ func RegisterRoutes(router *mux.Router) {
 }
 
 func RegisterHealthRoutes(router *mux.Router) {
-	router.HandleFunc("/api/v1/health", HealthCheck)
+	router.HandleFunc("/api/v1/health", handlers.HealthCheck)
 }
