@@ -10,6 +10,9 @@ COPY go.mod go.sum ./
 # Descarga los módulos Go
 RUN go mod download
 
+# Asegura que el binario sea compatible con la arquitectura del entorno de producción
+ENV GOOS=linux GOARCH=amd64
+
 # Copia el código fuente de la aplicación
 COPY . .
 
